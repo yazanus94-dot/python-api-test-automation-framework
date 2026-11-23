@@ -4,7 +4,7 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     environment:
       DATABASE_URL: /tmp/sut/tasks.db
-      JWT_SECRET_KEY: docker-demo-secret-change-me
+      JWT_SECRET_KEY: docker-demo-secret-change-me-2026-xyz
       TEST_USERNAME: qa_user
       TEST_PASSWORD: TestPassw0rd!
       SECOND_USERNAME: second_user
@@ -25,7 +25,7 @@ services:
     environment:
       USE_EXTERNAL_API: "1"
       API_BASE_URL: http://api:8000
-      JWT_SECRET_KEY: docker-demo-secret-change-me
+      JWT_SECRET_KEY: docker-demo-secret-change-me-2026-xyz
       TEST_USERNAME: qa_user
       TEST_PASSWORD: TestPassw0rd!
       SECOND_USERNAME: second_user
