@@ -1,0 +1,34 @@
+services:
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: /tmp/sut/tasks.db
+      JWT_SECRET_KEY: docker-demo-secret-change-me
+      TEST_USERNAME: qa_user
+      TEST_PASSWORD: TestPassw0rd!
+      SECOND_USERNAME: second_user
+      SECOND_PASSWORD: SecondPassw0rd!
+    ports:
+      - "8765:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  tests:
+    build: .
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      USE_EXTERNAL_API: "1"
+      API_BASE_URL: http://api:8000
+      TEST_USERNAME: qa_user
+      TEST_PASSWORD: TestPassw0rd!
+      SECOND_USERNAME: second_user
+      SECOND_PASSWORD: SecondPassw0rd!
+    command: python -m pytest -q
+    volumes:
+      - ./reports:/app/reports
