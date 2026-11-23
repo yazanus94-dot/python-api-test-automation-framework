@@ -12,7 +12,7 @@ Order:
 3. `ruff format --check .`
 4. `mypy app qa_framework`
 5. `python -m pytest -m smoke -v`
-6. `python -m pytest -m regression -v`
+6. `python -m pytest -m "regression and not smoke" -v`
 7. Upload `reports/` with `if: always()` — HTML and JUnit survive failures.
 
 Actions used: `actions/checkout@v4`, `actions/setup-python@v5`,
@@ -31,7 +31,7 @@ ruff check .
 ruff format --check .
 mypy app qa_framework
 python -m pytest -m smoke -v
-python -m pytest -m regression -v
+python -m pytest -m "regression and not smoke" -v
 ```
 
 ## Secrets

@@ -25,6 +25,7 @@ services:
     environment:
       USE_EXTERNAL_API: "1"
       API_BASE_URL: http://api:8000
+      JWT_SECRET_KEY: docker-demo-secret-change-me
       TEST_USERNAME: qa_user
       TEST_PASSWORD: TestPassw0rd!
       SECOND_USERNAME: second_user

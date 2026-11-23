@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sqlite3
 from collections.abc import Callable
 from typing import Any
 
@@ -11,7 +10,7 @@ import pytest
 from qa_framework.api_client import ApiClient
 from qa_framework.assertions import assert_fields, assert_status
 
-pytestmark = [pytest.mark.regression, pytest.mark.integration]
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.smoke
@@ -24,6 +23,7 @@ def test_create_task(task_factory: Callable[..., dict[str, Any]]) -> None:
     assert created["status"] == "pending"
 
 
+@pytest.mark.regression
 def test_read_task(auth_client: ApiClient, task_factory: Callable[..., dict[str, Any]]) -> None:
     created = task_factory()
     response = auth_client.get(f"/api/v1/tasks/{created['id']}")
@@ -45,6 +45,7 @@ def test_list_tasks_with_pagination(
     assert body["total"] >= 2
 
 
+@pytest.mark.regression
 def test_update_task(auth_client: ApiClient, task_factory: Callable[..., dict[str, Any]]) -> None:
     created = task_factory()
     response = auth_client.patch(
@@ -57,35 +58,57 @@ def test_update_task(auth_client: ApiClient, task_factory: Callable[..., dict[st
     assert updated["updated_at"] >= created["updated_at"]
 
 
+@pytest.mark.regression
 def test_delete_task(auth_client: ApiClient, task_factory: Callable[..., dict[str, Any]]) -> None:
     created = task_factory()
     assert_status(auth_client.delete(f"/api/v1/tasks/{created['id']}"), 204)
     assert_status(auth_client.get(f"/api/v1/tasks/{created['id']}"), 404)
 
 
+@pytest.mark.regression
 def test_get_nonexistent_task(auth_client: ApiClient) -> None:
     assert_status(auth_client.get("/api/v1/tasks/99999999"), 404)
 
 
+@pytest.mark.regression
 def test_update_nonexistent_task(auth_client: ApiClient) -> None:
     assert_status(auth_client.patch("/api/v1/tasks/99999999", json_body={"title": "x"}), 404)
 
 
+@pytest.mark.regression
 def test_delete_nonexistent_task(auth_client: ApiClient) -> None:
     assert_status(auth_client.delete("/api/v1/tasks/99999999"), 404)
 
 
+@pytest.mark.regression
 def test_database_persistence(
-    task_factory: Callable[..., dict[str, Any]], db_connection: sqlite3.Connection
+    base_url: str, auth_token: str, task_factory: Callable[..., dict[str, Any]]
 ) -> None:
-    created = task_factory(title="Persisted")
-    row = db_connection.execute(
-        "SELECT title, owner FROM tasks WHERE id = ?", (created["id"],)
-    ).fetchone()
-    assert row is not None and row["title"] == "Persisted"
-    assert row["owner"] == created["owner"]
+    """Verify persistence via a separate HTTP session (no direct SQLite access)."""
+    created = task_factory(
+        title="Persisted", description="HTTP persistence check", status="in_progress"
+    )
+    task_id = created["id"]
+
+    # Independent client/session with its own valid Bearer token.
+    reader = ApiClient(base_url, token=auth_token)
+    first = reader.get(f"/api/v1/tasks/{task_id}")
+    assert_status(first, 200)
+    fetched = first.json()
+    assert fetched["id"] == task_id
+    assert fetched["title"] == "Persisted"
+    assert fetched["description"] == "HTTP persistence check"
+    assert fetched["status"] == "in_progress"
+    assert fetched["owner"] == created["owner"]
+
+    # Another authenticated request must return the same stored representation.
+    assert_status(ApiClient(base_url, token=auth_token).get("/api/v1/tasks"), 200)
+    again = ApiClient(base_url, token=auth_token).get(f"/api/v1/tasks/{task_id}")
+    assert_status(again, 200)
+    assert again.json() == fetched
 
 
+@pytest.mark.regression
 def test_other_user_task_forbidden(
     second_client: ApiClient, task_factory: Callable[..., dict[str, Any]]
 ) -> None:
@@ -93,6 +116,7 @@ def test_other_user_task_forbidden(
     assert_status(second_client.get(f"/api/v1/tasks/{created['id']}"), 403)
 
 
+@pytest.mark.regression
 def test_list_only_own_tasks(
     second_client: ApiClient, task_factory: Callable[..., dict[str, Any]]
 ) -> None:

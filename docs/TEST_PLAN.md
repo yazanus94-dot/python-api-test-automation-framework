@@ -11,7 +11,7 @@ there are no mocked HTTP responses.
 | Marker | Purpose | Typical count |
 |---|---|---|
 | `smoke` | Critical path: health, login, list, create | 4 |
-| `regression` | Full functional coverage | 48 |
+| `regression` | Full functional coverage, excluding smoke (`regression and not smoke`) | 48 |
 | `authentication` | Login failures, token failures, authorization | 8 |
 | `negative` | Malformed/unauthorized/unsupported requests | 16 |
 | `contract` | OpenAPI, schemas, status codes, content types | 13 |

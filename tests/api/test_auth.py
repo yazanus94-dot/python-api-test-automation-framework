@@ -16,7 +16,7 @@ from qa_framework.assertions import (
 )
 from qa_framework.settings import settings
 
-pytestmark = [pytest.mark.authentication, pytest.mark.regression]
+pytestmark = pytest.mark.authentication
 
 
 @pytest.mark.smoke
@@ -32,6 +32,7 @@ def test_valid_login_returns_bearer_token(unauth_client: ApiClient) -> None:
     assert response.json()["expires_in"] > 0
 
 
+@pytest.mark.regression
 def test_invalid_username_rejected(unauth_client: ApiClient) -> None:
     response = unauth_client.post(
         "/api/v1/auth/token",
@@ -41,6 +42,7 @@ def test_invalid_username_rejected(unauth_client: ApiClient) -> None:
     assert_error_body(response, "invalid_credentials")
 
 
+@pytest.mark.regression
 def test_invalid_password_rejected(unauth_client: ApiClient) -> None:
     response = unauth_client.post(
         "/api/v1/auth/token",
@@ -50,18 +52,21 @@ def test_invalid_password_rejected(unauth_client: ApiClient) -> None:
     assert_error_body(response, "invalid_credentials")
 
 
+@pytest.mark.regression
 def test_missing_credentials_rejected(unauth_client: ApiClient) -> None:
     response = unauth_client.post("/api/v1/auth/token", json_body={})
     assert_status(response, 422)
     assert_error_body(response, "validation_error")
 
 
+@pytest.mark.regression
 def test_invalid_token_rejected(base_url: str) -> None:
     client = ApiClient(base_url, token="not-a-jwt")
     assert_status(client.get("/api/v1/tasks"), 401)
     assert_error_body(client.get("/api/v1/tasks"), "invalid_token")
 
 
+@pytest.mark.regression
 def test_expired_token_rejected(base_url: str) -> None:
     expired = create_access_token(settings.username, expires_delta=timedelta(seconds=-10))
     client = ApiClient(base_url, token=expired)
@@ -69,6 +74,7 @@ def test_expired_token_rejected(base_url: str) -> None:
     assert_error_body(client.get("/api/v1/tasks"), "invalid_token")
 
 
+@pytest.mark.regression
 def test_missing_authorization_header_rejected(unauth_client: ApiClient) -> None:
     assert_status(unauth_client.get("/api/v1/tasks"), 401)
     assert_error_body(unauth_client.get("/api/v1/tasks"), "missing_token")

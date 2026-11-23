@@ -5,9 +5,9 @@ A professional, self-contained QA automation portfolio project: a real REST API
 genuine network requests. Built for Mid-Level QA Automation Engineer / SDET
 evidence — not a mock-only demo.
 
-**Independence:** this is an independent portfolio project. It is not
-affiliated with PhysioNet, the 2026 Challenge, or any official competition, and
-no hidden labels or external datasets are used.
+**Independence:** this is a self-directed portfolio project. It uses only local
+synthetic test data and an in-process SQLite database; no external dataset or
+third-party account is required.
 
 ## 1. Purpose
 
@@ -98,7 +98,7 @@ SQLite database. No mocked HTTP responses are used.
 ```powershell
 python -m pytest -v                       # all 52 scenarios
 python -m pytest -m smoke -v              # 4 critical checks
-python -m pytest -m regression -v         # 48 regression checks
+python -m pytest -m "regression and not smoke" -v   # 48 regression checks
 python -m pytest -m authentication -v     # 8
 python -m pytest -m negative -v           # 16
 python -m pytest -m contract -v           # 13
@@ -106,16 +106,19 @@ python -m pytest -m integration -v        # 11
 python -m pytest -m unit -v               # 4
 ```
 
-Markers are declared in `pyproject.toml`; categories overlap, so 52 is the
-unique total. Each scenario is described in
-[docs/TEST_CASES.md](docs/TEST_CASES.md).
+Markers are declared in `pyproject.toml`. `smoke` (4) and `regression and not
+smoke` (48) are mutually exclusive and sum to the 52 unique scenarios; other
+markers (authentication, negative, contract, integration, unit) overlap by
+design. Each scenario is described in [docs/TEST_CASES.md](docs/TEST_CASES.md).
 
 ## 8. Test categories
 
 - **Authentication:** valid/invalid login, missing credentials, invalid and
   expired tokens, missing Authorization header.
-- **CRUD/persistence:** create, read, list, update, delete, direct SQLite
-  verification, nonexistent IDs and cross-user 403.
+- **CRUD/persistence:** create, read, list, update, delete, HTTP persistence
+  verification through a separate authenticated client, nonexistent IDs and
+  cross-user 403. No test reads the SQLite file directly, so the same suite runs
+  when API and tests are in different containers.
 - **Negative:** invalid JSON, missing fields, wrong types, invalid status/IDs,
   unauthorized requests, unsupported methods and bad pagination.
 - **Boundary:** title min/max, below-minimum/above-maximum, description maximum,
@@ -132,9 +135,13 @@ to every pytest run. Request/response diagnostics go to
 
 ## 10. CI/CD
 
-[docs/CI_CD.md](docs/CI_CD.md). Workflow: checkout → setup-python 3.12 →
-install → Ruff check → Ruff format check → mypy → smoke → regression → upload
-reports with `if: always()`. Permissions are `contents: read`.
+[docs/CI_CD.md](docs/CI_CD.md). The quality job runs on Python 3.12: checkout →
+setup-python → install → Ruff check → Ruff format check → mypy →
+`pytest -m smoke` → `pytest -m "regression and not smoke"` → upload reports with
+`if: always()`. A Docker job builds the image, validates Compose, starts the API
+container, waits for health, runs the tests container against `http://api:8000`
+with `USE_EXTERNAL_API=1`, and always tears down containers and volumes.
+Permissions are `contents: read`.
 
 ## 11. Docker
 
@@ -148,20 +155,27 @@ docker compose run --rm tests
 validated with `docker compose config`. Image build is **not verified locally**:
 the Docker CLI is installed but the daemon was unavailable in this workspace.
 
-## 12. Actual local verification (2026-11-23)
+## 12. Verification evidence (2026-11-23)
+
+**Locally verified (Python 3.14.7, Windows 11):**
 
 | Check | Result |
 |---|---|
-| `python -m pytest` (Python 3.14.7, Windows 11) | **52 passed, 0 failed** |
+| `python -m pytest` | **52 passed, 0 failed** |
 | `python -m pytest -m smoke` | **4 passed, 48 deselected** |
-| `python -m pytest -m regression` | **48 passed, 4 deselected** |
+| `python -m pytest -m "regression and not smoke"` | **48 passed, 4 deselected** |
 | `ruff check .` | **All checks passed!** |
 | `ruff format --check .` | **24 files already formatted** |
 | `mypy app qa_framework` | **Success: no issues found in 16 source files** |
 | HTML + JUnit reports | generated in `reports/` |
-| Docker Compose config | valid YAML; image build not verified (no daemon) |
 
-GitHub Actions for Python 3.12 has not yet been observed — see final hand-off.
+**Docker verified locally:** only `docker compose config` (valid YAML). The
+local Docker daemon was unavailable, so no local image build or container test
+was executed. Docker build and test execution are verified by the GitHub Actions
+Docker job instead.
+
+**GitHub Actions verified:** Python 3.12 quality gates and the Docker
+integration job; see the repository Actions tab for the latest run.
 
 ## 13. Limitations
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import sqlite3
 import threading
 from collections.abc import Callable, Iterator
 from pathlib import Path
@@ -115,11 +114,3 @@ def task_factory(auth_client: ApiClient) -> Iterator[Callable[..., dict[str, Any
     yield create
     for task_id in created:
         auth_client.delete(f"/api/v1/tasks/{task_id}")
-
-
-@pytest.fixture
-def db_connection(database_path: Path) -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(str(database_path))
-    conn.row_factory = sqlite3.Row
-    yield conn
-    conn.close()

@@ -9,7 +9,7 @@ import pytest
 from app.security import create_access_token, decode_access_token, hash_password, verify_password
 from qa_framework.helpers import redact, unique_payload
 
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit, pytest.mark.regression]
 
 
 def test_password_hash_roundtrip() -> None:

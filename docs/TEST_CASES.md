@@ -29,7 +29,7 @@ contract 13, unit 4 = **52**.
 | TC-C06 | GET nonexistent | 404 |
 | TC-C07 | PATCH nonexistent | 404 |
 | TC-C08 | DELETE nonexistent | 404 |
-| TC-C09 | SQLite persistence | Row present with expected title/owner |
+| TC-C09 | HTTP persistence via separate client | GET returns same id/title/description/status/owner after another request |
 | TC-C10 | Other user cannot read a task | 403, code `forbidden` |
 | TC-C11 | Users only see their own tasks | All items owned by current user |
 

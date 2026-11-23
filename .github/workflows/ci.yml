@@ -14,10 +14,10 @@ jobs:
   quality-and-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -39,14 +39,35 @@ jobs:
       - name: Smoke tests
         run: python -m pytest -m smoke -v
 
-      - name: Full regression tests
-        run: python -m pytest -m regression -v
+      - name: Regression tests (excluding smoke)
+        run: python -m pytest -m "regression and not smoke" -v
 
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-automation-reports
           path: |
             reports/
           if-no-files-found: warn
+
+  docker-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build API image
+        run: docker compose build api
+
+      - name: Start API service and wait for health
+        run: docker compose up -d --wait --wait-timeout 120 api
+
+      - name: Run automation tests against the API container
+        run: docker compose run --rm tests
+
+      - name: Clean up containers and volumes
+        if: always()
+        run: docker compose down -v --remove-orphans
