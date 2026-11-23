@@ -22,7 +22,7 @@ dev = [
   "requests>=2.31",
   "pytest-html>=4.1",
   "jsonschema>=4.21",
-  "ruff>=0.4",
+  "ruff==0.8.6",
   "mypy>=1.9",
 ]
 
