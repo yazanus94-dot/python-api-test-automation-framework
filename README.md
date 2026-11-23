@@ -175,7 +175,9 @@ was executed. Docker build and test execution are verified by the GitHub Actions
 Docker job instead.
 
 **GitHub Actions verified:** Python 3.12 quality gates and the Docker
-integration job; see the repository Actions tab for the latest run.
+integration job; see the repository Actions tab for the latest run. Command-level
+proof, including public commit and raw-file checks, is recorded in
+[docs/PUBLIC_VERIFICATION.md](docs/PUBLIC_VERIFICATION.md).
 
 ## 13. Limitations
 
